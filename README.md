@@ -8,4 +8,5 @@ The main thing that this repo does is that it reads the rate limiting
 configuration from `json`, `yaml` or `toml` files and converts that to the
 `ursa.Conf` object from [ursa reverse proxy] package.
 
-[ursa reverse proxy](https://github.com/ursaserver/ursa)
+[ursa reverse proxy]: https://github.com/ursaserver/ursa
+
