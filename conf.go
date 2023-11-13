@@ -53,6 +53,10 @@ func CheckConf(c *Conf) error {
 	if url.String() == "" {
 		return fmt.Errorf("url host is empty %q", url)
 	}
+	// TODO
+	// Need a more stringent mechanism of checking URL
+	// For example current localhost:3000 parses, but fails at runtime
+
 	// Check that the CustomRates are valid
 	validRateNames := []string{JSTRateBy, IPRateBy}
 	for k, v := range c.CustomRates {
