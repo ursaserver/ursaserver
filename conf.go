@@ -62,14 +62,21 @@ func CheckConf(c *Conf) error {
 			return fmt.Errorf("got error %v in CustomRate %v", err, v)
 		}
 	}
+	// Fail if there are no routes defined
+	if len(c.Routes) == 0 {
+		return fmt.Errorf("no routes defined in configuration file")
+	}
 	// Check that all routes are valid
 	for _, route := range c.Routes {
 		// Check that the pattern regex is valid
 		if _, err := regexp.Compile(route.Pattern); err != nil {
 			return fmt.Errorf("cannot compile regex Pattern for %v", route)
 		}
-		// TODO
 		// Check if no methods defined
+		if len(route.Methods) == 0 {
+			return fmt.Errorf("no allowed methods defined for route %q", route)
+		}
+
 		// Ensure that the methods names are nothing but alphabetical characters
 		for _, method := range route.Methods {
 			if !MethodCheckerRegex.MatchString(method) {

@@ -28,7 +28,7 @@ func main() {
 	}
 	// Check if the configuration is valid
 	if err := CheckConf(&conf); err != nil {
-		fmt.Fprintf(os.Stderr, "error detected in configuration\n%v\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
 	}
 	// Convert the configuration got into ursa.Conf
