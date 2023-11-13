@@ -1,0 +1,14 @@
+# Env
+.env
+
+# Config
+config.json
+
+# Vim
+*.swp
+
+# MacOS
+.DS_Store
+
+# Build
+*.o
