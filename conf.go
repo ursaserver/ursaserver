@@ -34,26 +34,6 @@ type CustomRate struct {
 	FailMsg             string
 }
 
-// Note that because the ursa package doesn't expose structs like ursa.rate
-// and ursa.rateBy as public, we are having to create our own here. We also
-// note that ursa doesn't expose such structs as a mechanism of defensive
-// programming.
-
-// Mimicks ursa.rate
-type Rate struct {
-	Capacity int
-	Duration int
-}
-
-// Mimicks ursa.rateBy
-type RateByHeader struct {
-	Name      string
-	Valid     ursa.IsValidHeaderValue
-	Signature ursa.SignatureFromHeaderValue
-	FailCode  int
-	FailMsg   string
-}
-
 var MethodCheckerRegex = regexp.MustCompile("^[A-Za-z]+$")
 
 // The rate by field name to use to refer to rate by JWT token
@@ -66,12 +46,15 @@ const (
 // error otherwise
 func CheckConf(c *Conf) error {
 	// Check that the upstream url is valid
-	_, err := url.Parse(c.Upstream)
+	url, err := url.Parse(c.Upstream)
 	if err != nil {
 		return fmt.Errorf("error parsing upstream url %v. %v", c.Upstream, err)
 	}
+	if url.String() == "" {
+		return fmt.Errorf("url host is empty %q", url)
+	}
 	// Check that the CustomRates are valid
-	validRateNames := []string{JSTRateBy}
+	validRateNames := []string{JSTRateBy, IPRateBy}
 	for k, v := range c.CustomRates {
 		validRateNames = append(validRateNames, k)
 		// Check if a given custom rate is valid
@@ -85,6 +68,8 @@ func CheckConf(c *Conf) error {
 		if _, err := regexp.Compile(route.Pattern); err != nil {
 			return fmt.Errorf("cannot compile regex Pattern for %v", route)
 		}
+		// TODO
+		// Check if no methods defined
 		// Ensure that the methods names are nothing but alphabetical characters
 		for _, method := range route.Methods {
 			if !MethodCheckerRegex.MatchString(method) {
@@ -101,12 +86,15 @@ func CheckConf(c *Conf) error {
 			}
 		}
 	}
+	// TODO
+	// Ensure that if rate by JWT is being used, the JWT header name, uid field
+	// name, and JSWT secret is provided
 	return nil
 }
 
 // Creates a RateByHeader based on CustomRate given. Returns (RateByHeader, error)
-func CustomRateToRateBy(c CustomRate) (RateByHeader, error) {
-	var rateByHeader RateByHeader
+func CustomRateToRateBy(c CustomRate) (ursa.RateBy, error) {
+	var rateByHeader ursa.RateBy
 	if c.Header == JSTRateBy || c.Header == IPRateBy {
 		return rateByHeader, fmt.Errorf("%v is a predefined header name thus cannot be redefined", c.Header)
 	}
@@ -120,26 +108,27 @@ func CustomRateToRateBy(c CustomRate) (RateByHeader, error) {
 			return rateByHeader, fmt.Errorf("error compiling ValidIfMatchesRegex %v for  rate %v", c.ValidIfMatchesRegex, c)
 		}
 	}
-	rateByHeader.Name = c.Header
-	rateByHeader.FailCode = c.FailCode
-	rateByHeader.FailMsg = c.FailMsg
-	// Use whatever is the header value as the signature
-	rateByHeader.Signature = func(value string) string { return value }
+	var validFn func(string) bool
 	if len(c.ValidIfMatchesRegex) > 0 {
-		rateByHeader.Valid = func(s string) bool {
+		validFn = func(s string) bool {
 			return regexp.MustCompile(c.ValidIfMatchesRegex).MatchString(s)
 		}
 	} else {
-		rateByHeader.Valid = func(s string) bool {
+		validFn = func(s string) bool {
 			return In(c.ValidIfIn, s)
 		}
 	}
+	rateByHeader = *ursa.NewRateBy(c.Header,
+		validFn,
+		func(s string) string { return s },
+		c.FailCode,
+		c.FailMsg)
 	return rateByHeader, nil
 }
 
 // Creates a Rate based on rate string. Returns (Rate, error)
-func RateStringToRate(r string) (Rate, error) {
-	var rate Rate
+func RateStringToRate(r string) (ursa.Rate, error) {
+	var rate ursa.Rate
 	s := SanitizeRateString(r)
 	parts := strings.Split(s, "/")
 	if len(parts) < 2 {
@@ -151,11 +140,11 @@ func RateStringToRate(r string) (Rate, error) {
 	}
 	switch strings.ToUpper(parts[1]) {
 	case "MINUTE":
-		return Rate{capacity, int(ursa.Minute)}, nil
+		return ursa.NewRate(capacity, ursa.Minute), nil
 	case "HOUR":
-		return Rate{capacity, int(ursa.Hour)}, nil
+		return ursa.NewRate(capacity, ursa.Hour), nil
 	case "DAY":
-		return Rate{capacity, int(ursa.Day)}, nil
+		return ursa.NewRate(capacity, ursa.Day), nil
 	}
 	return rate, fmt.Errorf("valid time units are minute/hour/day got %v", parts[1])
 }
@@ -163,4 +152,39 @@ func RateStringToRate(r string) (Rate, error) {
 // Remove any whitespace from the rate string
 func SanitizeRateString(r string) string {
 	return strings.ReplaceAll(r, " ", "")
+}
+
+// Assume that configuration provided as input is valid, where the validity is
+// determined by the CheckConf function
+func confToUrsaConf(c Conf) ursa.Conf {
+	var ursaConf ursa.Conf
+	// Setup URL
+	url, _ := url.Parse(c.Upstream)
+	ursaConf.Upstream = url
+	// Create RateBys to make routes
+	rateBys := make(map[string]*ursa.RateBy)
+	for name, value := range c.CustomRates {
+		r, _ := CustomRateToRateBy(value)
+		rateBys[name] = &r
+	}
+	rateBys[IPRateBy] = ursa.RateByIP
+	// TODO
+	// Rate by JWT Auth Token
+
+	routes := make([]ursa.Route, 0)
+	for _, c := range c.Routes {
+		var route ursa.Route
+		route.Methods = c.Methods
+		route.Pattern = regexp.MustCompile(c.Pattern)
+		rates := ursa.RouteRates{}
+		for rateByName, rateValue := range c.Rates {
+			rateBy := rateBys[rateByName]
+			rate, _ := RateStringToRate(rateValue)
+			rates[rateBy] = rate
+		}
+		route.Rates = rates
+		routes = append(routes, route)
+	}
+	ursaConf.Routes = routes
+	return ursaConf
 }

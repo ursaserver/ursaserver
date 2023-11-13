@@ -1,0 +1,11 @@
+{ 
+	"Upstream": "http://localhost:8000", 
+	"Routes": [
+		{
+			"Methods": ["GET"],
+			"Pattern": ".*",
+			"Rates": {"IP": "5/minute"}
+		}
+	], 
+	"CustomRates": {} 
+}

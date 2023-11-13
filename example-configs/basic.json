@@ -1,0 +1,16 @@
+{
+	"Upstream": "",
+	"Routes": [
+		{
+			"Methods": ["GET", "POST"],
+			"Pattern": "home",
+			"Rates": {"JWTAuth": "60/minute", "FrontendApp":  "300/hour"}
+		}
+	],
+	"Logfile": "",
+	"CustomRates": {
+		"FrontendApp": {
+			"header": "", "validIfMatches": "", "validIfIn": [], "failCode": 500, "failMsg": "foobar" }
+		}
+"JWTAuth": {"usernameString": "" }
+}

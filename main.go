@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/ursaserver/ursa"
@@ -26,13 +27,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
 	}
+	// Check if the configuration is valid
 	if err := CheckConf(&conf); err != nil {
 		fmt.Fprintf(os.Stderr, "error detected in configuration\n%v\n", err)
 		return
 	}
-}
+	// Convert the configuration got into ursa.Conf
+	ursaConf := confToUrsaConf(conf)
 
-func ConfToUrsaConf(c Conf) ursa.Conf {
-	var ursaConf ursa.Conf
-	return ursaConf
+	// Create a ursa reverse proxy based on the provided configuration
+	rp := ursa.New(ursaConf)
+	// Create HTTP server
+	http.ListenAndServe(":3333", rp)
 }
