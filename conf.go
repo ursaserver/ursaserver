@@ -149,6 +149,9 @@ func RateStringToRate(r string) (ursa.Rate, error) {
 	if err != nil {
 		return rate, fmt.Errorf("error reading the integer capacity for rate got %v", parts[0])
 	}
+	if capacity <= 0 {
+		return rate, fmt.Errorf("integer capacity has to be >0 got %v", parts[0])
+	}
 	switch strings.ToUpper(parts[1]) {
 	case "MINUTE":
 		return ursa.NewRate(capacity, ursa.Minute), nil
