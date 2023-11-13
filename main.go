@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,14 +10,12 @@ import (
 	"github.com/ursaserver/ursa"
 )
 
-const MissingConfFileMessage = `missing configuration file name`
-
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, MissingConfFileMessage)
-		return
-	}
-	confFile, err := os.Open(os.Args[1])
+	portPtr := flag.Int("port", 3333, "server port")
+	filePtr := flag.String("file", "conf.json", "configuration json file")
+	flag.Parse()
+
+	confFile, err := os.Open(*filePtr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
@@ -38,5 +37,7 @@ func main() {
 	// Create a ursa reverse proxy based on the provided configuration
 	rp := ursa.New(ursaConf)
 	// Create HTTP server
-	http.ListenAndServe(":3333", rp)
+	hostPort := fmt.Sprintf(":%v", *portPtr)
+	fmt.Println("listening at", hostPort)
+	http.ListenAndServe(hostPort, rp)
 }
