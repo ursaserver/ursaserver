@@ -3,6 +3,7 @@
 
 # Config
 config.json
+example-configs
 
 # Vim
 *.swp
