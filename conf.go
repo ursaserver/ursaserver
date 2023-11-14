@@ -38,7 +38,7 @@ var MethodCheckerRegex = regexp.MustCompile("^[A-Za-z]+$")
 
 // The rate by field name to use to refer to rate by JWT token
 const (
-	JSTRateBy = "JWT"
+	JWTRateBy = "JWT"
 	IPRateBy  = "IP"
 )
 
@@ -58,7 +58,7 @@ func CheckConf(c *Conf) error {
 	// For example current localhost:3000 parses, but fails at runtime
 
 	// Check that the CustomRates are valid
-	validRateNames := []string{JSTRateBy, IPRateBy}
+	validRateNames := []string{JWTRateBy, IPRateBy}
 	for k, v := range c.CustomRates {
 		validRateNames = append(validRateNames, k)
 		// Check if a given custom rate is valid
@@ -106,7 +106,7 @@ func CheckConf(c *Conf) error {
 // Creates a RateByHeader based on CustomRate given. Returns (RateByHeader, error)
 func CustomRateToRateBy(c CustomRate) (ursa.RateBy, error) {
 	var rateByHeader ursa.RateBy
-	if c.Header == JSTRateBy || c.Header == IPRateBy {
+	if c.Header == JWTRateBy || c.Header == IPRateBy {
 		return rateByHeader, fmt.Errorf("%v is a predefined header name thus cannot be redefined", c.Header)
 	}
 	if len(c.ValidIfIn) == 0 && len(c.ValidIfMatchesRegex) == 0 {
