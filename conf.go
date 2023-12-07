@@ -22,7 +22,7 @@ type Conf struct {
 
 type Route struct {
 	Methods []string
-	Pattern string
+	Pattern *regexp.Regexp
 	Rates   map[string]string
 }
 
@@ -73,9 +73,9 @@ func CheckConf(c *Conf) error {
 	// Check that all routes are valid
 	for _, route := range c.Routes {
 		// Check that the pattern regex is valid
-		if _, err := regexp.Compile(route.Pattern); err != nil {
-			return fmt.Errorf("cannot compile regex Pattern for %v", route)
-		}
+		// if _, err := regexp.Compile(route.Pattern); err != nil {
+		// 	return fmt.Errorf("cannot compile regex Pattern for %v", route)
+		// }
 		// Check if no methods defined
 		if len(route.Methods) == 0 {
 			return fmt.Errorf("no allowed methods defined for route %q", route)
@@ -189,7 +189,8 @@ func confToUrsaConf(c Conf) ursa.Conf {
 	for _, c := range c.Routes {
 		var route ursa.Route
 		route.Methods = c.Methods
-		route.Pattern = regexp.MustCompile(c.Pattern)
+		route.Pattern = c.Pattern
+		// route.Pattern = regexp.MustCompile(c.Pattern)
 		rates := ursa.RouteRates{}
 		for rateByName, rateValue := range c.Rates {
 			rateBy := rateBys[rateByName]
