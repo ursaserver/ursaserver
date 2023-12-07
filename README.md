@@ -16,7 +16,7 @@ from [ursa] package.
 This is a command line that can be installed using `go get` 
 
 ```
-go get -u github.com/ursaserver/ursaserver/
+go install github.com/ursaserver/ursaserver/@latest
 ```
 
 options to download the binary if you don't have go installed may be provided
