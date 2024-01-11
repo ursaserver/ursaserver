@@ -13,9 +13,9 @@ from [ursa] package.
 
 ## Installation
 
-This is a command line that can be installed using `go get` 
+If you have go command install the binary by running
 
-```
+```bash
 go install github.com/ursaserver/ursaserver/@latest
 ```
 
@@ -98,6 +98,6 @@ as you like.
 ## Issues
 1. Secrets are exposed in JSON, no comments.
 1. Don't have a nice way to know what's wrong with configuration json when it doesn't work.
-1. Feel free to send a PR, or flag issues that you see. 
- 
+
+
 [ursa]: https://github.com/ursaserver/ursa

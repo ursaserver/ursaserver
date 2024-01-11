@@ -99,7 +99,7 @@ func CheckConf(c *Conf) error {
 	}
 	// TODO
 	// Ensure that if rate by JWT is being used, the JWT header name, uid field
-	// name, and JSWT secret is provided
+	// name, and JWT secret is provided
 	return nil
 }
 
